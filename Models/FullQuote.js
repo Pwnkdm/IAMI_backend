@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 
+// Model for FullQuote
 const FullQuote = new mongoose.Schema({
   CarrierQuoteNumber: {
     type: String,
