@@ -51,21 +51,16 @@ app.get("/api/getAccessToken", async (req, res) => {
 app.post("/api/createquote", async (req, res) => {
   try {
     const access_token = await GetAccessToken();
-
     const response = await axiosInstance.post(
       "/sureinsureau/v1/appframework-bff-app/createQuote",
-      req.body,
+      req.body, // Request body
       {
         headers: {
-          Authorization: `Bearer ${access_token}`,
+          Authorization: `Bearer ${access_token}`, // Include the Bearer token in the Authorization header
+          timeout: 10000,
         },
       }
     );
-
-    // Send response to the client immediately
-    res.send({ success: true, quote: response.data });
-
-    // Save data to the database in the background
     if (response.data?.CarrierQuoteNumber && response.data?.ProposalNo) {
       const newPolicy = new Policy({
         CarrierQuoteNumber: response.data.CarrierQuoteNumber,
@@ -74,9 +69,10 @@ app.post("/api/createquote", async (req, res) => {
       });
       await newPolicy.save();
     }
+    res.send({ success: true, quote: response.data });
   } catch (err) {
-    console.error("Error creating quote:", err);
-    res.status(500).send({ success: false, message: err.message });
+    // console.log(err);
+    res.send({ success: false, message: err });
   }
 });
 
