@@ -57,7 +57,7 @@ app.post("/api/createquote", async (req, res) => {
       {
         headers: {
           Authorization: `Bearer ${access_token}`, // Include the Bearer token in the Authorization header
-          timeout: 10000,
+          timeout: 20000,
         },
       }
     );
