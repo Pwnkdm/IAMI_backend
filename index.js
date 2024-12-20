@@ -51,27 +51,39 @@ app.get("/api/getAccessToken", async (req, res) => {
 app.post("/api/createquote", async (req, res) => {
   try {
     const access_token = await GetAccessToken();
+
+    // Make the API call to the third-party service
     const response = await axiosInstance.post(
       "/sureinsureau/v1/appframework-bff-app/createQuote",
       req.body, // Request body
       {
         headers: {
-          Authorization: `Bearer ${access_token}`, // Include the Bearer token in the Authorization header
+          Authorization: `Bearer ${access_token}`,
         },
       }
     );
+
     if (response.data?.CarrierQuoteNumber && response.data?.ProposalNo) {
-      const newPolicy = new Policy({
-        CarrierQuoteNumber: response.data.CarrierQuoteNumber,
-        ProposalNo: response.data.ProposalNo,
-        data: response.data,
-      });
-      await newPolicy.save();
+      // Save to the database asynchronously
+      (async () => {
+        try {
+          const newPolicy = new Policy({
+            CarrierQuoteNumber: response.data.CarrierQuoteNumber,
+            ProposalNo: response.data.ProposalNo,
+            data: response.data,
+          });
+          await newPolicy.save();
+        } catch (dbError) {
+          console.error("Error saving policy to the database:", dbError);
+        }
+      })();
     }
+
+    // Send response immediately without waiting for database save
     res.send({ success: true, quote: response.data });
   } catch (err) {
-    // console.log(err);
-    res.send({ success: false, message: err });
+    console.error("Error creating quote:", err);
+    res.status(500).send({ success: false, message: err.message });
   }
 });
 
