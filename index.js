@@ -52,10 +52,9 @@ app.post("/api/createquote", async (req, res) => {
   try {
     const access_token = await GetAccessToken();
 
-    // Make the API call to the third-party service
     const response = await axiosInstance.post(
       "/sureinsureau/v1/appframework-bff-app/createQuote",
-      req.body, // Request body
+      req.body,
       {
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -63,24 +62,18 @@ app.post("/api/createquote", async (req, res) => {
       }
     );
 
-    if (response.data?.CarrierQuoteNumber && response.data?.ProposalNo) {
-      // Save to the database asynchronously
-      (async () => {
-        try {
-          const newPolicy = new Policy({
-            CarrierQuoteNumber: response.data.CarrierQuoteNumber,
-            ProposalNo: response.data.ProposalNo,
-            data: response.data,
-          });
-          await newPolicy.save();
-        } catch (dbError) {
-          console.error("Error saving policy to the database:", dbError);
-        }
-      })();
-    }
-
-    // Send response immediately without waiting for database save
+    // Send response to the client immediately
     res.send({ success: true, quote: response.data });
+
+    // Save data to the database in the background
+    if (response.data?.CarrierQuoteNumber && response.data?.ProposalNo) {
+      const newPolicy = new Policy({
+        CarrierQuoteNumber: response.data.CarrierQuoteNumber,
+        ProposalNo: response.data.ProposalNo,
+        data: response.data,
+      });
+      await newPolicy.save();
+    }
   } catch (err) {
     console.error("Error creating quote:", err);
     res.status(500).send({ success: false, message: err.message });
